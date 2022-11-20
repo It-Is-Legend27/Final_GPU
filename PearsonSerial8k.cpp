@@ -67,7 +67,7 @@ int main()
         sumXsq += F[n] * F[n];
 
         // Sum of Y^2s
-        sumYsq += G[n] + G[n];
+        sumYsq += G[n] * G[n];
     }
 
     // Pearson Correlation Coefficient
