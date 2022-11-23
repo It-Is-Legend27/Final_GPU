@@ -24,7 +24,7 @@
 using namespace std;
 
 // Size of arrays F and G
-const int N = 8192;
+const int N = 16384;
 
 // function that returns correlation coefficient.
 double correlationCoefficient(double X[], double Y[], int n)
