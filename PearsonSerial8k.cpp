@@ -105,7 +105,7 @@ int main()
 	corrCoefficient = correlationCoefficient(F, G, N);
 
 	// Finish timing execution
-	GET_TIME(finish);;
+	GET_TIME(finish);
 
 	// Calculate elapsed time of execution
 	elapsed = finish - start;
