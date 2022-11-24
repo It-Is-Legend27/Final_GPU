@@ -16,7 +16,7 @@
 // Source: https://www.geeksforgeeks.org/program-find-correlation-coefficient/
 // Minor modifications were performed to the code from this source for the purposes
 // of using it in our program. We altered the code to accept values of type double
-// rather than of type integer
+// rather than of type integer.
 //*****************************************************************
 #include<iostream>
 #include <cmath>
@@ -70,7 +70,7 @@ int main()
     G[0] = 1;
     
     // Initialize F with values starting from 8192 down to 1
-    // Initialize G with values starting from 1 to 8192
+    // Initialize G with values starting from 1 up to 8192
     for (int n = 1; n < N; ++n)
     {
         // f(n) = f(n-1) - 1
@@ -80,7 +80,7 @@ int main()
     }
 
 	//Function call to correlationCoefficient.
-	cout<<correlationCoefficient(F, G, N);
+	cout << "Pearson Correlation Coefficient of F and G: " << correlationCoefficient(F, G, N) << '\n';
     
 	return EXIT_SUCCESS;
 }
