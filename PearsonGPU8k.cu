@@ -2,20 +2,12 @@
 #include <stdio.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
-
+// Source: https://sodocumentation.net/cuda/topic/6566/parallel-reduction--e-g--how-to-sum-an-array-
 static const int wholeArraySize = 100000000;
 static const int blockSize = 1024;
-static const int gridSize = 24;
+static const int gridSize = 24; //this number is hardware-dependent; usually #SM*2 is a good number.
 
-__device__ bool lastBlock(int* counter) {
-    __threadfence(); //ensure that partial result is visible by all blocks
-    int last = 0;
-    if (threadIdx.x == 0)
-        last = atomicAdd(counter, 1);
-    return __syncthreads_or(last == gridDim.x-1);
-}    
-
-__global__ void sumCommMultiBlock(const int *gArr, int arraySize, int *gOut, int* lastBlockCounter) {
+__global__ void sumCommMultiBlock(const int *gArr, int arraySize, int *gOut) {
     int thIdx = threadIdx.x;
     int gthIdx = thIdx + blockIdx.x*blockSize;
     const int gridSize = blockSize*gridDim.x;
@@ -32,17 +24,6 @@ __global__ void sumCommMultiBlock(const int *gArr, int arraySize, int *gOut, int
     }
     if (thIdx == 0)
         gOut[blockIdx.x] = shArr[0];
-    if (lastBlock(lastBlockCounter)) {
-        shArr[thIdx] = thIdx<gridSize ? gOut[thIdx] : 0;
-        __syncthreads();
-        for (int size = blockSize/2; size>0; size/=2) { //uniform
-            if (thIdx<size)
-                shArr[thIdx] += shArr[thIdx+size];
-            __syncthreads();
-        }
-        if (thIdx == 0)
-            gOut[0] = shArr[0];            
-    }
 }
 
 __host__ int sumArray(int* arr) {
@@ -54,22 +35,22 @@ __host__ int sumArray(int* arr) {
     int* dev_out;
     cudaMalloc((void**)&dev_out, sizeof(int)*gridSize);
     
-    int* dev_lastBlockCounter;
-    cudaMalloc((void**)&dev_lastBlockCounter, sizeof(int));
-    cudaMemset(dev_lastBlockCounter, 0, sizeof(int));
-    
-    sumCommMultiBlock<<<gridSize, blockSize>>>(dev_arr, wholeArraySize, dev_out, dev_lastBlockCounter);
+    sumCommMultiBlock<<<gridSize, blockSize>>>(dev_arr, wholeArraySize, dev_out);
+    //dev_out now holds the partial result
+    sumCommMultiBlock<<<1, blockSize>>>(dev_out, gridSize, dev_out);
+    //dev_out[0] now holds the final result
     cudaDeviceSynchronize();
     
     cudaMemcpy(&out, dev_out, sizeof(int), cudaMemcpyDeviceToHost);
     cudaFree(dev_arr);
     cudaFree(dev_out);
     return out;
-}  
+}
+
 
 int main()
 {
-    int A[100000000] = {1,2,3,4,5,6,7,8,9,10};
+    int* A = new int[100000000]{1,2,3,4,5,6,7,8,9,10};
 
     int sum = sumArray(A);
 
