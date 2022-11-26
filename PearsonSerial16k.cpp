@@ -42,8 +42,6 @@ int main()
     double X[N];
     double Y[N];
 
-	double corrCoefficient;
-
     // Start sequence of X with 16384
     X[0] = N;
 
