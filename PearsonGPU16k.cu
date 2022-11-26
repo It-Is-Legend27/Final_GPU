@@ -253,7 +253,7 @@ int main()
     GET_TIME(finishT);
 
     // Calculate execution time
-    elapsedT =finishT - startT;
+    elapsedT = finishT - startT;
 
     // Copy total sums from device to host
     cudaMemcpy(&sumX, sumXd, sizeof(double), cudaMemcpyDeviceToHost);
