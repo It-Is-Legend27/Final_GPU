@@ -96,8 +96,8 @@ int main()
 
 	// Print execution time and calculations
     cout << fixed;
-    cout << "Pearson Product Moment Correlation Coefficient 16k" << '\n';
-    cout << "###################################################\n";
+    cout << "Pearson Product Moment Correlation Coefficient Serial 16k" << '\n';
+    cout << "##########################################################\n";
     cout << "Execution time:           " << elapsed << '\n';
     cout << "Sum of X:                 " << sum_X << '\n';
     cout << "Sum of Y:                 " << sum_Y << '\n';
@@ -105,7 +105,7 @@ int main()
     cout << "Sum of X^2:               " << squareSum_X << '\n';
     cout << "Sum of Y^2:               " << squareSum_Y << '\n';
     cout << "PPMCC:                    " << corr << '\n';
-    cout << "###################################################\n";
+    cout << "##########################################################\n";
     
 	return EXIT_SUCCESS;
 }
