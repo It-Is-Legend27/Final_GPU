@@ -11,8 +11,8 @@
 //
 // Description:
 // This program calculates the Pearson Product Moment Correlation Coefficient 
-// (PPMCC) between 2 arrays, F and G and prints out the result. The arrays F 
-// and G contain 16384 elements each, the arrays do not contain extreme 
+// (PPMCC) between 2 arrays, X and Y and prints out the result. The arrays X 
+// and Y contain 16384 elements each, the arrays do not contain extreme 
 // outliers and they also satisfy the assumptions for the PPMCC.
 // First, the arrays for all values of XY, X^2, and Y^2 must be computed prior
 // to performing the parallel reduction. Then, an initial call to the kernel
@@ -37,9 +37,17 @@
 #include <stdio.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include "timer.h"
 
+using namespace std;
+
+// Size of arrays
 static const int N = 16384;
+
+// Number of threads per block
 static const int blockSize = 1024;
+
+// Number of blocks
 static const int gridSize = 16;
 
 /**
@@ -139,21 +147,19 @@ __global__ void sumCommMultiBlock(
     }
 }
 
-/**
- * @brief Given an array X, Y, an array of the element-wise multiplication of X and Y,
- * an array of the squares of elements in X, and an array of the squares of elements in Y,
- * compute the Pearson Product Moment Correlation Coefficient (PPMCC).
- * 
- * @param X Array of doubles, size N.
- * @param Y Array of doubles, size N.
- * @param XY Element-wise multiplication of X and Y, size N.
- * @param Xsq Element-wise square of X, size N.
- * @param Ysq Element-wise square of Y, size N.
- * @return The PPMCC, a double 
- */
-__host__ double calcCorrCoefficient(double *X, double *Y, double *XY, double *Xsq, double *Ysq)
+int main()
 {
-    // Device copies of arrays passed in
+    // Used for timing execution
+    double startT, finishT, elapsedT;
+
+    // Arrays used for calculation of PPMCC
+    double X[N];
+    double Y[N];
+    double XY[N];
+    double Xsq[N];
+    double Ysq[N];
+
+    // Device arrays
     double *Xd;
     double *Yd;
     double *XYd;
@@ -173,6 +179,36 @@ __host__ double calcCorrCoefficient(double *X, double *Y, double *XY, double *Xs
     double *sumXYd;
     double *sumXsqd;
     double *sumYsqd;
+
+    // Start sequence of X with N
+    X[0] = N;
+
+    // Start sequence of Y with 1
+    Y[0] = 1;
+    
+    // Intialize first element
+    XY[0] = X[0] * Y[0];
+    Xsq[0] = X[0] * X[0];
+    Ysq[0] = Y[0] * Y[0];
+
+    // Initialize X with values starting from 16384 down to 1
+    // Initialize Y with values starting from 1 up to 16384
+    // Calculate element-wise multiplication of X and Y
+    // Calculate squares of elements in X and Y
+    for (int n = 1; n < N; ++n)
+    {
+        // x(n) = x(n-1) - 1
+        X[n] = X[n-1] - 1;
+
+        // y(n) = y(n-1) + 1
+        Y[n] = Y[n-1] + 1;
+
+        XY[n] = X[n] * Y[n]; 
+
+        Xsq[n] = X[n] * X[n];
+
+        Ysq[n] = Y[n] * Y[n];
+    }
 
     // Copy X to Xd
     cudaMalloc((void **)&Xd, N * sizeof(double));
@@ -201,6 +237,9 @@ __host__ double calcCorrCoefficient(double *X, double *Y, double *XY, double *Xs
     cudaMalloc((void **)&sumXsqd, sizeof(double) * gridSize);
     cudaMalloc((void **)&sumYsqd, sizeof(double) * gridSize);
 
+    // Start timing
+    GET_TIME(startT);
+
     // Calculate partial sums (array of size of no. of blocks)
     sumCommMultiBlock<<<gridSize, blockSize>>>(Xd, Yd, XYd, Xsqd, Ysqd, N, sumXd, sumYd, sumXYd, sumXsqd, sumYsqd);
 
@@ -210,12 +249,35 @@ __host__ double calcCorrCoefficient(double *X, double *Y, double *XY, double *Xs
     // Ensure completion of GPU activity
     cudaDeviceSynchronize();
 
+    // End timing
+    GET_TIME(finishT);
+
+    // Calculate execution time
+    elapsedT =finishT - startT;
+
     // Copy total sums from device to host
     cudaMemcpy(&sumX, sumXd, sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(&sumY, sumYd, sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(&sumXY, sumXYd, sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(&sumXsq, sumXsqd, sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(&sumYsq, sumYsqd, sizeof(double), cudaMemcpyDeviceToHost);
+
+    // Calculate PPMCC using the sums
+    double corr = (double)(N * sumXY - sumX * sumY) 
+    / sqrt((N * sumXsq - sumX * sumX) * (N * sumYsq - sumY * sumY));
+
+    // Print execution time and calculations
+    cout << fixed;
+    cout << "Pearson Product Moment Correlation Coefficient 16k" << '\n';
+    cout << "###################################################\n";
+    cout << "Execution time of kernel: " << elapsedT << '\n';
+    cout << "Sum of X:                 " << sumX << '\n';
+    cout << "Sum of Y:                 " << sumY << '\n';
+    cout << "Sum of XY:                " << sumXY << '\n';
+    cout << "Sum of X^2:               " << sumXsq << '\n';
+    cout << "Sum of Y^2:               " << sumYsq << '\n';
+    cout << "PPMCC:                    " << corr << '\n';
+    cout << "###################################################\n";
 
     // Free device arrays
     cudaFree(Xd);
@@ -231,50 +293,5 @@ __host__ double calcCorrCoefficient(double *X, double *Y, double *XY, double *Xs
     cudaFree(sumXsqd);
     cudaFree(sumYsqd);
 
-    // Calculate PPMCC using the sums
-    double corr = (double)(N * sumXY - sumX * sumY) 
-    / sqrt((N * sumXsq - sumX * sumX) * (N * sumYsq - sumY * sumY));
-
-    // Return PPMCC
-    return corr;
-}
-
-int main()
-{
-    double *F = new double[N]{0};
-    double* G = new double[N]{0};
-    double* FG = new double[N]{0};
-    double* FF = new double[N]{0};
-    double* GG = new double[N]{0};
-
-    F[0] = N;
-
-    // Start sequence of G with 1
-    G[0] = 1;
-    
-    FG[0] = F[0] * G[0];
-
-    FF[0] = F[0] * F[0];
-
-    GG[0] = G[0] * G[0];
-
-    // Initialize F with values starting from 16384 down to 1
-    // Initialize G with values starting from 1 up to 16384
-    for (int n = 1; n < N; ++n)
-    {
-        // f(n) = f(n-1) - 1
-        F[n] = F[n-1] - 1;
-        // g(n) = g(n-1) + 1
-        G[n] = G[n-1] + 1;
-
-        FG[n] = F[n] * G[n]; 
-
-        FF[n] = F[n] * F[n];
-
-        GG[n] = G[n] * G[n];
-    }
-
-    double corr = calcCorrCoefficient(F, G, FG, FF, GG);
-
-    std::cout << "The corr is " << corr;
+    return EXIT_SUCCESS;
 }

@@ -3,7 +3,8 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "C:/cygwin64/usr/include"
             ],
             "defines": [
                 "_DEBUG",

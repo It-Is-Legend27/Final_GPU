@@ -11,8 +11,8 @@
 //
 // Description:
 // This program calculates the Pearson Product Moment Correlation Coefficient 
-// (PPMCC) between 2 arrays, F and G and prints out the result. The arrays F 
-// and G contain 16384 elements each, the arrays do not contain extreme 
+// (PPMCC) between 2 arrays, X and Y and prints out the result. The arrays X 
+// and Y contain 16384 elements each, the arrays do not contain extreme 
 // outliers and they also satisfy the assumptions for the PPMCC.
 //
 // Source: https://www.geeksforgeeks.org/program-find-correlation-coefficient/
@@ -27,27 +27,47 @@
 
 using namespace std;
 
-// Size of arrays F and G
+// Size of arrays X and Y
 const int N = 16384;
 
-/**
- * @brief Calculates the Pearson Product Moment Correlation Coefficient
- * between two arrays of equal size.
- * 
- * @param X Array of type double, size of n.
- * @param Y Array of type double, size of n.
- * @param n Size of arrays X and Y.
- * @returns Pearson Product Moment Correlation Coefficient between arrays
- * X and Y. Value is of type double.
- */
-double correlationCoefficient(double X[], double Y[], int n)
+int main()
 {
+	// Used for timing code
+	double start, finish, elapsed;
+
+	// Begin timing execution
+	GET_TIME(start);
+
+	// Arrays X and Y for calculating correlation coefficient between them
+    double X[N];
+    double Y[N];
+
+	double corrCoefficient;
+
+    // Start sequence of X with 16384
+    X[0] = N;
+
+    // Start sequence of Y with 1
+    Y[0] = 1;
+    
+    // Initialize X with values starting from 16384 down to 1
+    // Initialize Y with values starting from 1 up to 16384
+    for (int n = 1; n < N; ++n)
+    {
+        // X(n) = X(n-1) - 1
+        X[n] = X[n-1] - 1;
+
+        // Y(n) = Y(n-1) + 1
+        Y[n] = Y[n-1] + 1;
+    }
+
+	// Calculate PPMCC
 	// Sums required for the calculation of PPMCC
 	double sum_X = 0, sum_Y = 0, sum_XY = 0;
 	double squareSum_X = 0, squareSum_Y = 0;
 
 	// Calculate all the sums
-	for (int i = 0; i < n; i++)
+	for (int i = 0; i < N; i++)
 	{
 		// Sum of elements of array X
 		sum_X = sum_X + X[i];
@@ -64,45 +84,9 @@ double correlationCoefficient(double X[], double Y[], int n)
 	}
 
 	// Calculate PPMCC using the formula for PPMCC
-	double corr = (double)(n * sum_XY - sum_X * sum_Y)
-				/ sqrt((n * squareSum_X - sum_X * sum_X)
-					* (n * squareSum_Y - sum_Y * sum_Y));
-
-	return corr;
-}
-
-int main()
-{
-	// Used for timing code
-	double start, finish, elapsed;
-
-	// Begin timing execution
-	GET_TIME(start);
-
-	// Arrays F and G for calculating correlation coefficient between them
-    double F[N];
-    double G[N];
-
-	double corrCoefficient;
-
-    // Start sequence of F with 16384
-    F[0] = N;
-
-    // Start sequence of G with 1
-    G[0] = 1;
-    
-    // Initialize F with values starting from 16384 down to 1
-    // Initialize G with values starting from 1 up to 16384
-    for (int n = 1; n < N; ++n)
-    {
-        // f(n) = f(n-1) - 1
-        F[n] = F[n-1] - 1;
-        // g(n) = g(n-1) + 1
-        G[n] = G[n-1] + 1;
-    }
-
-	// Calculate PPMCC
-	corrCoefficient = correlationCoefficient(F, G, N);
+	double corr = (double)(N * sum_XY - sum_X * sum_Y)
+				/ sqrt((N * squareSum_X - sum_X * sum_X)
+					* (N * squareSum_Y - sum_Y * sum_Y));
 
 	// Finish timing execution
 	GET_TIME(finish);
@@ -110,9 +94,18 @@ int main()
 	// Calculate elapsed time of execution
 	elapsed = finish - start;
 
-	// Print execution time and PPMCC
-	cout << "Execution time: " << elapsed << '\n';
-	cout << "Pearson Correlation Coefficient of F and G: " << corrCoefficient << '\n';
+	// Print execution time and calculations
+    cout << fixed;
+    cout << "Pearson Product Moment Correlation Coefficient 16k" << '\n';
+    cout << "###################################################\n";
+    cout << "Execution time:           " << elapsed << '\n';
+    cout << "Sum of X:                 " << sum_X << '\n';
+    cout << "Sum of Y:                 " << sum_Y << '\n';
+    cout << "Sum of XY:                " << sum_XY << '\n';
+    cout << "Sum of X^2:               " << squareSum_X << '\n';
+    cout << "Sum of Y^2:               " << squareSum_Y << '\n';
+    cout << "PPMCC:                    " << corr << '\n';
+    cout << "###################################################\n";
     
 	return EXIT_SUCCESS;
 }
