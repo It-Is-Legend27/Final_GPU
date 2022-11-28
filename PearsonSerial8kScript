@@ -38,7 +38,7 @@
 module list
 pwd
 date
-g++ PearsonSerial8k.c -o a.out
+g++ PearsonSerial8k.cpp -o a.out
 # Launch serial code...
 
 ./a.out         # Do not use ibrun or any other MPI launcher

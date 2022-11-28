@@ -5,9 +5,9 @@
 //***************************************************************************
 // How to run:
 // This program is to be run on the TACC cluster using the SBATCH
-// shell script named "PearsonGPU16kScript".
+// shell script named "PearsonGPU8kScript".
 // The command to be run in the bash terminal is:
-// sbatch PearsonGPU16kScript
+// sbatch PearsonGPU8kScript
 //
 // Description:
 // This program calculates the Pearson Product Moment Correlation Coefficient 
